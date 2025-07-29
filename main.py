@@ -1,6 +1,6 @@
 import cv2
 import mediapipe as mp
-from strech_detector import detect_stretch
+from app.strech_detector import detect_stretch
 
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
