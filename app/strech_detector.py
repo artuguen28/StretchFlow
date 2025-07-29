@@ -19,3 +19,11 @@ def detect_stretch(landmarks, frame):
     if dist < 0.1:
         cv2.putText(frame, "Arm Stretch Detected!", (50, 50), 
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        
+
+def plot_landmarks(frame, landmarks):
+    """Draws pose landmarks on the frame."""
+    for lm in landmarks.landmark:
+        h, w, _ = frame.shape
+        cx, cy = int(lm.x * w), int(lm.y * h)
+        cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
