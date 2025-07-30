@@ -15,98 +15,118 @@ pygame.display.set_caption("StretchFlow")
 font = pygame.font.Font(None, 74)
 button_font = pygame.font.Font(None, 50)
 
+title_surface = font.render("StretchFlow", True, colors["WHITE"])
+button_text = button_font.render("Start", True, colors["BLACK"])
+
 # Button dimensions
 button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2, 200, 60)
 
 # Initialize OpenCV
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
+
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands()
+
+
 cap = cv2.VideoCapture(0)
 
 # Game state
 running = True
 detection_started = False
 
+def detect_upper_body(results):
+    upper_body_landmarks = [
+        mp_pose.PoseLandmark.LEFT_SHOULDER,
+        mp_pose.PoseLandmark.RIGHT_SHOULDER,
+        mp_pose.PoseLandmark.LEFT_ELBOW,
+        mp_pose.PoseLandmark.RIGHT_ELBOW,
+        mp_pose.PoseLandmark.LEFT_HIP,
+        mp_pose.PoseLandmark.RIGHT_HIP,
+    ]
+    return all(
+        results.pose_landmarks.landmark[landmark].visibility > 0.5
+        for landmark in upper_body_landmarks
+    )
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if button_rect.collidepoint(event.pos):
-                detection_started = True
 
     # Capture video frame
     ret, frame = cap.read()
     if not ret:
         break
 
-    # Flip the frame horizontally for a mirror effect
-    frame = cv2.flip(frame, 1)
-
     # Resize the frame to match the screen dimensions
     frame = cv2.resize(frame, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+    # Convert the frame to RGB for MediaPipe
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+
     # Perform stretch detection if started
     if detection_started:
-        # Convert the frame to RGB for MediaPipe
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
         results = pose.process(rgb_frame)
 
-        if results.pose_landmarks:
-            # Check if upper body landmarks are detected
-            upper_body_landmarks = [
-                mp_pose.PoseLandmark.LEFT_SHOULDER,
-                mp_pose.PoseLandmark.RIGHT_SHOULDER,
-                mp_pose.PoseLandmark.LEFT_ELBOW,
-                mp_pose.PoseLandmark.RIGHT_ELBOW,
-                mp_pose.PoseLandmark.LEFT_HIP,
-                mp_pose.PoseLandmark.RIGHT_HIP,
-            ]
-            upper_body_detected = all(
-                results.pose_landmarks.landmark[landmark].visibility > 0.5
-                for landmark in upper_body_landmarks
-            )
+        upper_body_detected = detect_upper_body(results)
 
-            if upper_body_detected:
-                print("Upper body landmarks detected!")
-                # Plot landmarks directly on the frame
-                plot_landmarks(frame, results.pose_landmarks)
+        plot_landmarks(frame, results.pose_landmarks)
 
-                # Detect stretches
-                # detect_stretch(results.pose_landmarks, frame)
-            else:
-                print("Upper body landmarks not detected!")
-                # Display a message on the screen
-                message_surface = font.render(
-                    "Upper body not detected!", True, colors["RED"]
-                )
-                screen.blit(
-                    message_surface,
-                    (SCREEN_WIDTH // 2 - message_surface.get_width() // 2, 100),
-                )
+        if upper_body_detected:
+            print("Upper body landmarks detected!")
+
+            # Plot landmarks directly on the frame
+            
         else:
-            print("No landmarks detected.")
+            print("Upper body landmarks not detected!")
             # Display a message on the screen
             message_surface = font.render(
-                "No landmarks detected!", True, colors["RED"]
+                "Upper body not detected!", True, colors["RED"]
             )
             screen.blit(
                 message_surface,
                 (SCREEN_WIDTH // 2 - message_surface.get_width() // 2, 100),
             )
 
-    # Convert the frame to RGB for pygame
+    # Convert the frame to RGB for pygame and display it once
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame = pygame.surfarray.make_surface(frame)
     frame = pygame.transform.rotate(frame, -90)
-
-    # Display video as background
     screen.blit(frame, (0, 0))
 
     # Display title and button if detection has not started
     if not detection_started:
+
+        hand_results = hands.process(rgb_frame)
+
+        # Check for hand landmarks to interact with the button
+        if hand_results.multi_hand_landmarks:
+            for hand_landmarks in hand_results.multi_hand_landmarks:
+                # Get the coordinates of the index finger tip
+                index_finger_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+
+                # Convert normalized coordinates to screen coordinates
+                x, y = int(index_finger_tip.x * SCREEN_WIDTH), int(index_finger_tip.y * SCREEN_HEIGHT)
+
+                # Check if the index finger tip is over the button
+                if button_rect.collidepoint(x, y):
+                    detection_started = True
+
+        else:
+            print("No hand landmarks detected.")
+            # Display a message on the screen
+            message_surface = font.render(
+                "No hand landmarks detected!", True, colors["RED"]
+            )
+            screen.blit(
+                message_surface,
+                (SCREEN_WIDTH // 2 - message_surface.get_width() // 2, 300),
+            )
+
         # Display title
-        title_surface = font.render("StretchFlow", True, colors["WHITE"])
         screen.blit(
             title_surface,
             (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 100),
@@ -114,7 +134,6 @@ while running:
 
         # Display button
         pygame.draw.rect(screen, colors["GREEN"], button_rect)
-        button_text = button_font.render("Start", True, colors["BLACK"])
         screen.blit(
             button_text,
             (
