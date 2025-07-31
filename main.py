@@ -46,6 +46,7 @@ stretch_detection_started = False
 countdown_start_time = None  # Initialize the countdown start time
 stretch_screen_active = False  # New state to manage the stretch detection screen
 
+strech_exercise = 0
 
 # Initialize Pygame Mixer
 # pygame.mixer.init()
@@ -56,7 +57,6 @@ stretch_screen_active = False  # New state to manage the stretch detection scree
 
 # upper_body_hint_img = pygame.image.load("./resources/graphics/body_layout.png")
 # upper_body_hint_img = pygame.transform.scale(upper_body_hint_img, (400, 300))  # Resize as needed
-
 
 
 while running:
@@ -90,20 +90,92 @@ while running:
 
             print("Stretch detection screen active")
             if results.pose_landmarks:
+
                 print("Pose landmarks detected")
-                if detect_bend_to_left(results.pose_landmarks, mp_pose):
-                    print("Stretch detected!")
 
-                    render_warning_message(
-                        "Stretch Detected! Hold this position..", colors["GREEN"], screen, warning_font
-                    )
+                match strech_exercise:
+                    case 0:
 
-                else:
-                    print("No stretch detected.")
+                        if detect_bend_to_left(results.pose_landmarks, mp_pose):
+                            print("Stretch detected!")
 
-                    render_warning_message(
-                        "Do the stretching!", colors["BLUE"], screen, warning_font
-                    )
+                            if not countdown_start_time:
+                                countdown_start_time = pygame.time.get_ticks()  # Record the start time
+
+                            elapsed_time = pygame.time.get_ticks() - countdown_start_time
+
+                            if elapsed_time < 1000:  # Display the message for 2 seconds
+
+                                render_warning_message(
+                                    "Stretch Detected! Hold this position..", colors["GREEN"], screen, warning_font
+                                )
+                            else:
+                                # Start the countdown
+                                countdown_value = 8 - (elapsed_time - 2000) // 1000
+                                if countdown_value > 0:
+                                    countdown_surface = countdown_font.render(str(countdown_value), True, colors["WHITE"])
+                                    screen.blit(
+                                        countdown_surface,
+                                        (SCREEN_WIDTH // 2 - countdown_surface.get_width() // 2, SCREEN_HEIGHT // 2),
+                                    )
+
+                                else:
+                                    if elapsed_time < 12000:  # Ensure the stretch is held for at least 10 seconds
+                                        render_warning_message(
+                                            "Good Job", colors["GREEN"], screen, warning_font
+                                        )
+                                    else:
+                                        countdown_start_time = None
+                                        strech_exercise = 1  # Move to the next exercise
+
+                        else:
+                            print("No stretch detected.")
+
+                            countdown_start_time = None  # Reset the timer
+
+                            render_warning_message(
+                                "Bend to the left!", colors["BLUE"], screen, warning_font
+                            )
+                    case 1:
+                        if detect_bend_to_right(results.pose_landmarks, mp_pose):
+                            print("Stretch detected!")
+
+                            if not countdown_start_time:
+                                countdown_start_time = pygame.time.get_ticks()  # Record the start time
+
+                            elapsed_time = pygame.time.get_ticks() - countdown_start_time
+
+                            if elapsed_time < 1000:  # Display the message for 2 seconds
+
+                                render_warning_message(
+                                    "Stretch Detected! Hold this position..", colors["GREEN"], screen, warning_font
+                                )
+                            else:
+                                # Start the countdown
+                                countdown_value = 8 - (elapsed_time - 2000) // 1000
+                                if countdown_value > 0:
+                                    countdown_surface = countdown_font.render(str(countdown_value), True, colors["WHITE"])
+                                    screen.blit(
+                                        countdown_surface,
+                                        (SCREEN_WIDTH // 2 - countdown_surface.get_width() // 2, SCREEN_HEIGHT // 2),
+                                    )
+
+                                else:
+
+                                    if elapsed_time < 12000:  # Ensure the stretch is held for at least 10 seconds
+                                        render_warning_message(
+                                            "Well done!", colors["GREEN"], screen, warning_font
+                                        )
+                                    else:
+                                        countdown_start_time = None
+                                        strech_exercise = 2  # Move to the next exercise
+
+                        else:
+                            print("No stretch detected.")
+
+                            render_warning_message(
+                                "Bend to the right!", colors["BLUE"], screen, warning_font
+                            )
 
         else:
             # Check for upper body detection
