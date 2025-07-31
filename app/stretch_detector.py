@@ -1,7 +1,7 @@
 import cv2
 import mediapipe as mp
 
-def detect_stretch(landmarks, frame):
+def detect_test_stretch(landmarks):
     """Detects specific stretches based on pose landmarks and annotates the frame.
     Args:
         landmarks: Pose landmarks from MediaPipe.
@@ -17,8 +17,9 @@ def detect_stretch(landmarks, frame):
     dist = (dx**2 + dy**2) ** 0.5
 
     if dist < 0.1:
-        cv2.putText(frame, "Arm Stretch Detected!", (50, 50), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        return True
+    else:
+        return False
         
 
 def detect_upper_body(landmarks, mp_pose):
@@ -34,11 +35,63 @@ def detect_upper_body(landmarks, mp_pose):
     return all(
         landmarks.landmark[landmark].visibility > 0.5 for landmark in upper_body_landmarks
     ) if landmarks else False
-        
 
-def plot_landmarks(frame, landmarks):
-    """Draws pose landmarks on the frame."""
-    for lm in landmarks.landmark:
-        h, w, _ = frame.shape
-        cx, cy = int(lm.x * w), int(lm.y * h)
-        cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
+
+def detect_bend_to_right(landmarks, mp_pose):
+    """Detects if the body is bending to the right based on pose landmarks.
+    Args:
+        landmarks: Pose landmarks from MediaPipe.
+        mp_pose: MediaPipe pose module for accessing landmark indices.
+    Returns:
+        bool: True if the body is bending to the right, False otherwise.
+    """
+    if not landmarks:
+        return False
+
+    lm = landmarks.landmark
+
+    # Get key landmarks for shoulders, hips, and knees
+    left_shoulder = lm[mp_pose.PoseLandmark.LEFT_SHOULDER]
+    right_shoulder = lm[mp_pose.PoseLandmark.RIGHT_SHOULDER]
+    left_hip = lm[mp_pose.PoseLandmark.LEFT_HIP]
+    left_wrist = lm[mp_pose.PoseLandmark.LEFT_WRIST]
+    nose = lm[mp_pose.PoseLandmark.NOSE]
+
+
+    # Check if the right side landmarks are consistently more to the right (lower x value)
+    if (
+        left_shoulder.x < left_hip.x and 
+        left_wrist.x < right_shoulder.x and 
+        left_wrist.y < nose.y
+    ):
+        return True
+    return False
+
+def detect_bend_to_left(landmarks, mp_pose):
+    """Detects if the body is bending to the left based on pose landmarks.
+    Args:
+        landmarks: Pose landmarks from MediaPipe.
+        mp_pose: MediaPipe pose module for accessing landmark indices.
+    Returns:
+        bool: True if the body is bending to the left, False otherwise.
+    """
+    if not landmarks:
+        return False
+
+    lm = landmarks.landmark
+
+    # Get key landmarks for shoulders, hips, and knees
+    left_shoulder = lm[mp_pose.PoseLandmark.LEFT_SHOULDER]
+    right_shoulder = lm[mp_pose.PoseLandmark.RIGHT_SHOULDER]
+    right_hip = lm[mp_pose.PoseLandmark.RIGHT_HIP]
+    right_wrist = lm[mp_pose.PoseLandmark.RIGHT_WRIST]
+    nose = lm[mp_pose.PoseLandmark.NOSE]
+
+    # Check if the left side landmarks are consistently more to the left (higher x value)
+    if (
+        right_shoulder.x > right_hip.x and 
+        right_wrist.x > left_shoulder.x  and 
+        right_wrist.y < nose.y
+    ):
+        return True
+    return False

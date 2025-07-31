@@ -1,9 +1,11 @@
 import cv2
 import mediapipe as mp
 import pygame
-from app.strech_detector import detect_stretch, plot_landmarks
+from app.stretch_detector import detect_bend_to_left, detect_bend_to_right, detect_test_stretch, detect_upper_body
 from utils.config import SCREEN_WIDTH, SCREEN_HEIGHT, colors
-import time  # Add this import for the countdown
+import time
+
+from utils.renders import render_warning_message  # Add this import for the countdown
 
 # Initialize pygame
 pygame.init()
@@ -40,25 +42,22 @@ cap = cv2.VideoCapture(0)
 
 # Game state
 running = True
-detection_started = False
+stretch_detection_started = False
 countdown_start_time = None  # Initialize the countdown start time
+stretch_screen_active = False  # New state to manage the stretch detection screen
 
-def detect_upper_body(results):
-    if results.pose_landmarks is None:
-        return False  # Return False if no pose landmarks are detected
 
-    upper_body_landmarks = [
-        mp_pose.PoseLandmark.LEFT_SHOULDER,
-        mp_pose.PoseLandmark.RIGHT_SHOULDER,
-        mp_pose.PoseLandmark.LEFT_ELBOW,
-        mp_pose.PoseLandmark.RIGHT_ELBOW,
-        mp_pose.PoseLandmark.LEFT_HIP,
-        mp_pose.PoseLandmark.RIGHT_HIP,
-    ]
-    return all(
-        results.pose_landmarks.landmark[landmark].visibility > 0.5
-        for landmark in upper_body_landmarks
-    )
+# Initialize Pygame Mixer
+# pygame.mixer.init()
+
+# # Load sound files
+# countdown_sound = pygame.mixer.Sound("./resources/audio/countdown-beep.mp3")  # Replace with your sound file path
+# start_sound = pygame.mixer.Sound("./resources/audio/countdown-beep.mp3")  # Sound to play when the countdown ends
+
+# upper_body_hint_img = pygame.image.load("./resources/graphics/body_layout.png")
+# upper_body_hint_img = pygame.transform.scale(upper_body_hint_img, (400, 300))  # Resize as needed
+
+
 
 while running:
     for event in pygame.event.get():
@@ -79,9 +78,78 @@ while running:
     pygame_frame = pygame.transform.rotate(pygame_frame, -90)
     screen.blit(pygame_frame, (0, 0))
 
+    # Always process the frame for pose detection
+
+    # Perform stretch detection if started
+    if stretch_detection_started:
+
+        results = pose.process(frame)
+
+        if stretch_screen_active:
+            # Call the stretch detection function as a new screen
+
+            print("Stretch detection screen active")
+            if results.pose_landmarks:
+                print("Pose landmarks detected")
+                if detect_bend_to_left(results.pose_landmarks, mp_pose):
+                    print("Stretch detected!")
+
+                    render_warning_message(
+                        "Stretch Detected! Hold this position..", colors["GREEN"], screen, warning_font
+                    )
+
+                else:
+                    print("No stretch detected.")
+
+                    render_warning_message(
+                        "Do the stretching!", colors["BLUE"], screen, warning_font
+                    )
+
+        else:
+            # Check for upper body detection
+            upper_body_detected = detect_upper_body(results.pose_landmarks, mp_pose)
+
+            if upper_body_detected:
+                if not countdown_start_time:
+                    countdown_start_time = pygame.time.get_ticks()  # Record the start time
+
+                elapsed_time = pygame.time.get_ticks() - countdown_start_time
+
+                if elapsed_time < 2000:  # Display the message for 2 seconds
+
+                    render_warning_message(
+                        "Good Job! Let's start your stretch session!", colors["GREEN"], screen, warning_font
+                    )
+
+                else:
+                    # Start the countdown
+                    countdown_value = 3 - (elapsed_time - 2000) // 1000
+                    if countdown_value > 0:
+                        countdown_surface = countdown_font.render(str(countdown_value), True, colors["WHITE"])
+                        screen.blit(
+                            countdown_surface,
+                            (SCREEN_WIDTH // 2 - countdown_surface.get_width() // 2, SCREEN_HEIGHT // 2),
+                        )
+
+                    else:
+                        print("Starting stretch session!")
+                        countdown_start_time = None  # Reset the timer
+                        stretch_screen_active = True  # Activate the stretch detection screen
+            else:
+                print("Upper body landmarks not detected!")
+                # Center the image
+                # screen.blit(upper_body_hint_img, (
+                #     SCREEN_WIDTH // 2 - upper_body_hint_img.get_width() // 2,
+                #     SCREEN_HEIGHT // 2 - upper_body_hint_img.get_height() // 2
+                # ))
+
+                # Optional: Add a warning message under or above the image
+                render_warning_message(
+                    "Align your upper body like the image!", colors["BLUE"], screen, warning_font
+                )
 
     # Display title and button if detection has not started
-    if not detection_started:
+    if not stretch_detection_started:
         hand_results = hands.process(frame)
 
         # Check for hand landmarks to interact with the button
@@ -95,21 +163,16 @@ while running:
 
                 # Check if the index finger tip is over the button
                 if start_button_rect.collidepoint(x, y):
-                    detection_started = True
-
-                # if exit_button_rect.collidepoint(x, y):
-                #     running = False
+                    stretch_detection_started = True
 
         else:
             print("No hand landmarks detected.")
             # Display a message on the screen
-            message_surface = warning_font.render(
-                "Use your index finger to start!", True, colors["BLUE"]
+
+            render_warning_message(
+                "Use your index finger to start!", colors["BLUE"], screen, warning_font
             )
-            screen.blit(
-                message_surface,
-                (SCREEN_WIDTH // 2 - message_surface.get_width() // 2, 300),
-            )
+            
 
         # Display title
         screen.blit(
@@ -126,65 +189,6 @@ while running:
                 start_button_rect.y + start_button_rect.height // 2 - start_button_text.get_height() // 2,
             ),
         )
-
-        # # Display exit button
-        # pygame.draw.rect(screen, colors["RED"], exit_button_rect)
-        # screen.blit(
-        #     exit_button_text,
-        #     (
-        #         exit_button_rect.x + exit_button_rect.width // 2 - exit_button_text.get_width() // 2,
-        #         exit_button_rect.y + exit_button_rect.height // 2 - exit_button_text.get_height() // 2,
-        #     ),
-        # )
-
-    # Perform stretch detection if started
-    if detection_started:
-        results = pose.process(frame)
-
-        # Check for upper body detection
-        upper_body_detected = detect_upper_body(results)
-
-        # Only plot landmarks if they exist
-        if results.pose_landmarks:
-            plot_landmarks(frame, results.pose_landmarks)
-
-        if upper_body_detected:
-            if not countdown_start_time:
-                countdown_start_time = pygame.time.get_ticks()  # Record the start time
-
-            elapsed_time = pygame.time.get_ticks() - countdown_start_time
-
-            if elapsed_time < 2000:  # Display the message for 2 seconds
-                message_surface = warning_font.render(
-                    "Good Job! Let's start your stretch session!", True, colors["GREEN"]
-                )
-                screen.blit(
-                    message_surface,
-                    (SCREEN_WIDTH // 2 - message_surface.get_width() // 2, 100),
-                )
-            else:
-                # Start the countdown
-                countdown_value = 3 - (elapsed_time - 2000) // 1000
-                if countdown_value > 0:
-                    countdown_surface = countdown_font.render(str(countdown_value), True, colors["WHITE"])
-                    screen.blit(
-                        countdown_surface,
-                        (SCREEN_WIDTH // 2 - countdown_surface.get_width() // 2, SCREEN_HEIGHT // 2),
-                    )
-                else:
-                    print("Starting stretch session!")
-                    detection_started = False  # Reset detection if needed
-                    countdown_start_time = None  # Reset the timer
-        else:
-            print("Upper body landmarks not detected!")
-            # Display a message on the screen
-            message_surface = warning_font.render(
-                "Place your upper body in the correct position!", True, colors["BLUE"]
-            )
-            screen.blit(
-                message_surface,
-                (SCREEN_WIDTH // 2 - message_surface.get_width() // 2, 100),
-            )
 
     pygame.display.flip()
 
