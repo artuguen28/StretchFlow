@@ -36,6 +36,9 @@ running = True
 detection_started = False
 
 def detect_upper_body(results):
+    if results.pose_landmarks is None:
+        return False  # Return False if no pose landmarks are detected
+
     upper_body_landmarks = [
         mp_pose.PoseLandmark.LEFT_SHOULDER,
         mp_pose.PoseLandmark.RIGHT_SHOULDER,
@@ -63,23 +66,25 @@ while running:
     frame = cv2.resize(frame, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
     # Convert the frame to RGB for MediaPipe
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+    # Convert the frame to RGB for pygame and display it once
+    pygame_frame = pygame.surfarray.make_surface(frame)
+    pygame_frame = pygame.transform.rotate(pygame_frame, -90)
+    screen.blit(pygame_frame, (0, 0))
 
     # Perform stretch detection if started
     if detection_started:
+        results = pose.process(frame)
 
-        results = pose.process(rgb_frame)
-
+        # Check for upper body detection
         upper_body_detected = detect_upper_body(results)
 
         plot_landmarks(frame, results.pose_landmarks)
-
+        
         if upper_body_detected:
             print("Upper body landmarks detected!")
-
             # Plot landmarks directly on the frame
-            
         else:
             print("Upper body landmarks not detected!")
             # Display a message on the screen
@@ -91,16 +96,9 @@ while running:
                 (SCREEN_WIDTH // 2 - message_surface.get_width() // 2, 100),
             )
 
-    # Convert the frame to RGB for pygame and display it once
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame = pygame.surfarray.make_surface(frame)
-    frame = pygame.transform.rotate(frame, -90)
-    screen.blit(frame, (0, 0))
-
     # Display title and button if detection has not started
     if not detection_started:
-
-        hand_results = hands.process(rgb_frame)
+        hand_results = hands.process(frame)
 
         # Check for hand landmarks to interact with the button
         if hand_results.multi_hand_landmarks:
