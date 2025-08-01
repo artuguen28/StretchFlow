@@ -1,7 +1,7 @@
 import cv2
 import mediapipe as mp
 import pygame
-from app.stretch_detector import detect_bend_to_left, detect_bend_to_right, detect_right_shoulder_extension, detect_left_shoulder_extension, detect_upper_body
+from app.stretch_detector import PoseDetectors, StretchExercise
 from utils.config import SCREEN_WIDTH, SCREEN_HEIGHT, colors
 import time
 from utils.renders import render_warning_message  # For countdown and messages
@@ -38,9 +38,28 @@ countdown_start_time = None
 stretch_detection_started = test_stretch
 stretch_screen_active = test_stretch
 
-stretch_exercise = 0
-num_exercises = 2  # Total number of exercises
-stretch_completed_flags = [False] * num_exercises
+# Initialize exercises
+exercises = [
+    StretchExercise(
+        name="Left Bend Stretch",
+        detect_func=PoseDetectors.detect_bend_to_left,
+        prompt_msg="Bend to the left!",
+        success_msg="Good Job!"
+    ),
+    StretchExercise(
+        name="Right Bend Stretch",
+        detect_func=PoseDetectors.detect_bend_to_right,
+        prompt_msg="Bend to the right!",
+        success_msg="Well done!"
+    ),
+    StretchExercise(
+        name="Right Shoulder Extension Stretch",
+        detect_func=PoseDetectors.detect_right_shoulder_extension,
+        prompt_msg="Extend your shoulder!",
+        success_msg="Nice!"
+    )
+]
+current_exercise_index = 0
 
 while running:
     for event in pygame.event.get():
@@ -62,84 +81,21 @@ while running:
         results = pose.process(frame)
 
         if stretch_screen_active:
-            if results.pose_landmarks:
-                match stretch_exercise:
-                    case 0:
-                        if not stretch_completed_flags[0]:
-                            if detect_bend_to_left(results.pose_landmarks, mp_pose):
-                                if not countdown_start_time:
-                                    countdown_start_time = pygame.time.get_ticks()
+            if results.pose_landmarks and current_exercise_index < len(exercises):
+                current_exercise = exercises[current_exercise_index]
+                finished = current_exercise.update(
+                    results.pose_landmarks,
+                    mp_pose,
+                    screen,
+                    warning_font,
+                    countdown_font,
+                    colors
+                )
+                if finished:
+                    current_exercise_index += 1
+            elif current_exercise_index >= len(exercises):
+                render_warning_message("Session Complete!", colors["GREEN"], screen, warning_font)
 
-                                elapsed_time = pygame.time.get_ticks() - countdown_start_time
-
-                                if elapsed_time < 1000:
-                                    render_warning_message("Stretch Detected! Hold this position..", colors["GREEN"], screen, warning_font)
-                                else:
-                                    countdown_value = 8 - (elapsed_time - 2000) // 1000
-                                    if countdown_value > 0:
-                                        countdown_surface = countdown_font.render(str(countdown_value), True, colors["WHITE"])
-                                        screen.blit(countdown_surface, (
-                                            SCREEN_WIDTH // 2 - countdown_surface.get_width() // 2,
-                                            SCREEN_HEIGHT // 2,
-                                        ))
-                                    else:
-                                        stretch_completed_flags[0] = True
-                                        countdown_start_time = None
-                                       
-                            else:
-                                countdown_start_time = None
-                                render_warning_message("Right shoulder extension!", colors["BLUE"], screen, warning_font)
-                        else:
-                            if not countdown_start_time:
-                                countdown_start_time = pygame.time.get_ticks()
-
-                            elapsed_time = pygame.time.get_ticks() - countdown_start_time
-
-                            if elapsed_time < 2000:
-                                render_warning_message("Good Job", colors["GREEN"], screen, warning_font)
-                            else:
-                                countdown_start_time = None
-                                stretch_exercise += 1
-
-                    case 1:
-                        if not stretch_completed_flags[1]:
-                            if detect_bend_to_right(results.pose_landmarks, mp_pose):
-                                if not countdown_start_time:
-                                    countdown_start_time = pygame.time.get_ticks()
-
-                                elapsed_time = pygame.time.get_ticks() - countdown_start_time
-
-                                if elapsed_time < 1000:
-                                    render_warning_message("Stretch Detected! Hold this position..", colors["GREEN"], screen, warning_font)
-                                else:
-                                    countdown_value = 8 - (elapsed_time - 2000) // 1000
-                                    if countdown_value > 0:
-                                        countdown_surface = countdown_font.render(str(countdown_value), True, colors["WHITE"])
-                                        screen.blit(countdown_surface, (
-                                            SCREEN_WIDTH // 2 - countdown_surface.get_width() // 2,
-                                            SCREEN_HEIGHT // 2,
-                                        ))
-                                    else:
-                                        stretch_completed_flags[1] = True
-                                        countdown_start_time = None
-                                        
-                            else:
-                                countdown_start_time = None
-                                render_warning_message("Left shoulder extension!", colors["BLUE"], screen, warning_font)
-                        else:
-                            if not countdown_start_time:
-                                countdown_start_time = pygame.time.get_ticks()
-
-                            elapsed_time = pygame.time.get_ticks() - countdown_start_time
-
-                            if elapsed_time < 2000:
-                                render_warning_message("Good Job", colors["GREEN"], screen, warning_font)
-                            else:
-                                countdown_start_time = None
-                                stretch_exercise += 1
-
-                if stretch_exercise >= num_exercises:
-                    render_warning_message("Session Complete!", colors["GREEN"], screen, warning_font)
         else:
             if results.pose_landmarks:
                 upper_body_detected = detect_upper_body(results.pose_landmarks, mp_pose)
