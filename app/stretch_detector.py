@@ -1,26 +1,3 @@
-import cv2
-import mediapipe as mp
-
-def detect_test_stretch(landmarks):
-    """Detects specific stretches based on pose landmarks and annotates the frame.
-    Args:
-        landmarks: Pose landmarks from MediaPipe.
-        frame: The current video frame to annotate.
-    """
-    # Example: basic arm stretch detection (left wrist close to right elbow)
-    lm = landmarks.landmark
-    left_wrist = lm[mp.solutions.pose.PoseLandmark.LEFT_WRIST]
-    right_elbow = lm[mp.solutions.pose.PoseLandmark.RIGHT_ELBOW]
-
-    dx = left_wrist.x - right_elbow.x
-    dy = left_wrist.y - right_elbow.y
-    dist = (dx**2 + dy**2) ** 0.5
-
-    if dist < 0.1:
-        return True
-    else:
-        return False
-        
 
 def detect_upper_body(landmarks, mp_pose):
     """Check if upper body landmarks are detected."""
@@ -92,6 +69,67 @@ def detect_bend_to_left(landmarks, mp_pose):
         right_shoulder.x > right_hip.x and 
         right_wrist.x > left_shoulder.x  and 
         right_wrist.y < nose.y
+    ):
+        return True
+    return False
+
+def detect_right_shoulder_extension(landmarks, mp_pose):
+    """Detects if the right shoulder is correctly extended based on pose landmarks.
+    Args:
+        landmarks: Pose landmarks from MediaPipe.
+        mp_pose: MediaPipe pose module for accessing landmark indices.
+    Returns:
+        bool: True if the right shoulder is correctly extended, False otherwise.
+    """
+    if not landmarks:
+        return False
+
+    lm = landmarks.landmark
+
+    # Get key landmarks for shoulders, hips, and knees
+    left_shoulder = lm[mp_pose.PoseLandmark.LEFT_SHOULDER]
+    right_elbow = lm[mp_pose.PoseLandmark.RIGHT_ELBOW]
+    left_wrist = lm[mp_pose.PoseLandmark.LEFT_WRIST]
+
+    elbow_l_shoulder_dist = (((right_elbow.x - left_shoulder.x) ** 2) + ((right_elbow.y - left_shoulder.y) ** 2) ** 0.5)
+    l_wirst_l_shoulder_dist = (((left_wrist.x - left_shoulder.x) ** 2) + ((left_wrist.y - left_shoulder.y) ** 2) ** 0.5)
+
+    print(f"Elbow to shoulder: {elbow_l_shoulder_dist}")
+    print(f"Wrist to shoulder: {l_wirst_l_shoulder_dist}")
+
+    # Check if the left side landmarks are consistently more to the left (higher x value)
+    if (
+        elbow_l_shoulder_dist < 0.15 and l_wirst_l_shoulder_dist < 0.15
+    ):
+        return True
+    return False
+
+def detect_left_shoulder_extension(landmarks, mp_pose):
+    """Detects if the left shoulder is correctly extended based on pose landmarks.
+    Args:
+        landmarks: Pose landmarks from MediaPipe.
+        mp_pose: MediaPipe pose module for accessing landmark indices.
+    Returns:
+        bool: True if the left shoulder is correctly extended, False otherwise.
+    """
+    if not landmarks:
+        return False
+
+    lm = landmarks.landmark
+
+    # Get key landmarks for shoulders, hips, and knees
+    right_shoulder = lm[mp_pose.PoseLandmark.RIGHT_SHOULDER]
+    left_elbow = lm[mp_pose.PoseLandmark.RIGHT_ELBOW]
+    right_wrist = lm[mp_pose.PoseLandmark.LEFT_WRIST]
+
+    elbow_r_shoulder_dist = (((left_elbow.x - right_shoulder.x) ** 2) + ((left_elbow.y - right_shoulder.y) ** 2)) ** 0.5
+    r_wirst_r_shoulder_dist = (((right_wrist.x - right_shoulder.x) ** 2) + ((right_wrist.y - right_shoulder.y) ** 2)) ** 0.5
+
+    print(f"Elbow to shoulder: {elbow_r_shoulder_dist}")
+    print(f"Wrist to shoulder: {r_wirst_r_shoulder_dist}")
+    
+    if (
+        elbow_r_shoulder_dist < 0.15 and r_wirst_r_shoulder_dist < 0.15
     ):
         return True
     return False
