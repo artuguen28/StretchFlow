@@ -1,6 +1,6 @@
 import pygame
 from utils.config import SCREEN_WIDTH, SCREEN_HEIGHT
-from utils.renders import render_warning_message
+from utils.ui_scaler import UIScaler
 
 class StretchExercise:
     def __init__(self, name, detect_func, prompt_msg, success_msg):
@@ -10,47 +10,41 @@ class StretchExercise:
         self.success_msg = success_msg
         self.completed = False
         self.countdown_start_time = None
-        self.render_warning_message = render_warning_message 
 
-
-    def update(self, pose_landmarks, mp_pose, screen, warning_font, countdown_font, colors):
+    def update(self, pose_landmarks, mp_pose, renderer, warning_font, countdown_font, colors):
         if self.completed:
             if not self.countdown_start_time:
                 self.countdown_start_time = pygame.time.get_ticks()
 
             elapsed_time = pygame.time.get_ticks() - self.countdown_start_time
             if elapsed_time < 2000:
-                self.render_warning_message(self.success_msg, colors["GREEN"], screen, warning_font)
-                return False  # still holding
+                renderer.render_warning_message(self.success_msg, colors["GREEN"], warning_font)
+                return False
             else:
                 self.countdown_start_time = None
-                return True  # done and ready to move on
+                return True
 
         if self.detect_func(pose_landmarks, mp_pose):
             if not self.countdown_start_time:
                 self.countdown_start_time = pygame.time.get_ticks()
 
             elapsed_time = pygame.time.get_ticks() - self.countdown_start_time
-
             if elapsed_time < 1000:
-                self.render_warning_message("Stretch Detected! Hold this position..", colors["GREEN"], screen, warning_font)
+                renderer.render_warning_message("Stretch Detected! Hold this position..", colors["GREEN"], warning_font)
             else:
                 countdown_value = 8 - (elapsed_time - 2000) // 1000
                 if countdown_value > 0:
-                    countdown_surface = countdown_font.render(str(countdown_value), True, colors["WHITE"])
-                    screen.blit(countdown_surface, (
-                        SCREEN_WIDTH // 2 - countdown_surface.get_width() // 2,
-                        SCREEN_HEIGHT // 2,
-                    ))
+                    renderer.render_centered_text(str(countdown_value), colors["WHITE"], countdown_font)
                 else:
                     self.completed = True
                     self.countdown_start_time = None
         else:
             self.countdown_start_time = None
-            self.render_warning_message(self.prompt_msg, colors["BLUE"], screen, warning_font)
+            renderer.render_warning_message(self.prompt_msg, colors["BLUE"], warning_font)
 
-        return False  # not yet done
+        return False
     
+
 
 class PoseDetectors:
 
@@ -110,8 +104,8 @@ class PoseDetectors:
             return False
         lm = landmarks.landmark
         right_shoulder = lm[mp_pose.PoseLandmark.RIGHT_SHOULDER]
-        left_elbow = lm[mp_pose.PoseLandmark.RIGHT_ELBOW]  # ?? seems misnamed, double-check
-        right_wrist = lm[mp_pose.PoseLandmark.LEFT_WRIST]
+        left_elbow = lm[mp_pose.PoseLandmark.LEFT_ELBOW] 
+        right_wrist = lm[mp_pose.PoseLandmark.RIGHT_WRIST]
         elbow_r_shoulder_dist = (((left_elbow.x - right_shoulder.x) ** 2) + ((left_elbow.y - right_shoulder.y) ** 2)) ** 0.5
         r_wrist_r_shoulder_dist = (((right_wrist.x - right_shoulder.x) ** 2) + ((right_wrist.y - right_shoulder.y) ** 2)) ** 0.5
         return elbow_r_shoulder_dist < 0.15 and r_wrist_r_shoulder_dist < 0.15
