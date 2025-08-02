@@ -30,17 +30,17 @@ class StretchExercise:
 
             elapsed_time = pygame.time.get_ticks() - self.countdown_start_time
             if elapsed_time < 1000:
-                renderer.render_warning_message("Stretch Detected! Hold this position..", colors["GREEN"], warning_font)
+                renderer.render_warning_message("Stretch Detected! Hold this position..", colors["BLACK"], warning_font, colors["GREEN"])
             else:
                 countdown_value = 8 - (elapsed_time - 2000) // 1000
                 if countdown_value > 0:
-                    renderer.render_centered_text(str(countdown_value), colors["WHITE"], countdown_font)
+                    renderer.render_centered_text(str(countdown_value), colors["BLACK"], countdown_font)
                 else:
                     self.completed = True
                     self.countdown_start_time = None
         else:
             self.countdown_start_time = None
-            renderer.render_warning_message(self.prompt_msg, colors["BLUE"], warning_font)
+            renderer.render_warning_message(self.prompt_msg, colors["WHITE"], warning_font, colors["BLUE"])
 
         return False
     
