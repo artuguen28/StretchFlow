@@ -32,7 +32,7 @@ renderer = UIRenderer(screen, scaler)
 
 # Fonts
 title_font = pygame.font.Font(None, scaler.font(150))
-warning_font = pygame.font.Font(None, scaler.font(90))
+warning_font = pygame.font.Font(None, scaler.font(70))
 button_font = pygame.font.Font(None, scaler.font(100))
 countdown_font = pygame.font.Font(None, scaler.font(200))
 
@@ -44,7 +44,7 @@ home_button_text = button_font.render("HOME", True, colors["WHITE"])
 # UI Rects
 title_rect = pygame.Rect(scaler.x(SCREEN_WIDTH // 2 - 350), scaler.y(80), scaler.x(700), scaler.y(130))
 start_button_rect = pygame.Rect(scaler.x(SCREEN_WIDTH // 2 - 150), scaler.y(SCREEN_HEIGHT // 2), scaler.x(300), scaler.y(100))
-home_button_rect = pygame.Rect(scaler.x(SCREEN_WIDTH // 2 - 100), scaler.y(SCREEN_HEIGHT // 2 + 300), scaler.x(200), scaler.y(60))
+home_button_rect = pygame.Rect(scaler.x(SCREEN_WIDTH // 2 - 150), scaler.y(SCREEN_HEIGHT // 2 + 300), scaler.x(300), scaler.y(100))
 
 # MediaPipe setup
 mp_pose = mp.solutions.pose
@@ -64,20 +64,38 @@ exercises = [
     StretchExercise(
         name="Left Bend Stretch",
         detect_func=PoseDetectors.detect_bend_to_left,
-        prompt_msg="Bend to the left!",
-        success_msg="Good Job!"
+        prompt_msg="Lean your upper body to the left side.",
+        success_msg="Nice stretch to the left!"
     ),
     StretchExercise(
         name="Right Bend Stretch",
         detect_func=PoseDetectors.detect_bend_to_right,
-        prompt_msg="Bend to the right!",
-        success_msg="Well done!"
+        prompt_msg="Lean your upper body to the right side.",
+        success_msg="Well done on that right bend!"
     ),
     StretchExercise(
-        name="Right Shoulder Extension Stretch",
+        name="Left Cross-Body Arm Stretch",
+        detect_func=PoseDetectors.detect_left_shoulder_extension,
+        prompt_msg="Bring your left arm across your chest and hold it with your right hand.",
+        success_msg="Great stretch!"
+    ),
+    StretchExercise(
+        name="Right Cross-Body Arm Stretch",
         detect_func=PoseDetectors.detect_right_shoulder_extension,
-        prompt_msg="Extend your shoulder!",
-        success_msg="Nice!"
+        prompt_msg="Bring your right arm across your chest and hold it with your left hand.",
+        success_msg="Awesome work!"
+    ),
+    StretchExercise(
+        name="Left Neck Tilt Stretch",
+        detect_func=PoseDetectors.detect_neck_tilt_left,
+        prompt_msg="Gently tilt your head toward your left shoulder.",
+        success_msg="Good job relaxing that neck!"
+    ),
+    StretchExercise(
+        name="Right Neck Tilt Stretch",
+        detect_func=PoseDetectors.detect_neck_tilt_right,
+        prompt_msg="Gently tilt your head toward your right shoulder.",
+        success_msg="Neck stretch complete!"
     )
 ]
 
@@ -132,7 +150,7 @@ while running:
                 else:
                     renderer.render_warning_message("Use your index finger to go home!", colors["WHITE"], warning_font, colors["BLUE"])
 
-                pygame.draw.rect(screen, colors["BLUE"], home_button_rect)
+                pygame.draw.rect(screen, colors["BLUE"], home_button_rect, border_radius=15)
                 screen.blit(home_button_text, (
                     home_button_rect.x + home_button_rect.width // 2 - home_button_text.get_width() // 2,
                     home_button_rect.y + home_button_text.get_height() // 4,
@@ -168,7 +186,7 @@ while running:
                 if start_button_rect.collidepoint(x, y):
                     stretch_detection_started = True
         else:
-            renderer.render_home_warning_message("Use your index finger to start!", colors["WHITE"], warning_font, colors["BLUE"])
+            renderer.render_home_warning_message("Use your index finger to touch the button!", colors["WHITE"], warning_font, colors["BLUE"])
 
         # Draw title and button
         pygame.draw.rect(screen, colors["BLACK"], title_rect, border_radius=15)
