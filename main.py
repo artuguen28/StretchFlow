@@ -10,11 +10,20 @@ from utils.ui_renderer import UIRenderer
 
 # Initialize pygame
 pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-# At the top of main.py after pygame.init()
+# Set up the display
+info = pygame.display.Info()
+screen_width = info.current_w
+screen_height = info.current_h
+
+WINDOW_WIDTH = int(screen_width * 0.5)
+WINDOW_HEIGHT = int(screen_height * 0.666)
+screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+
+# Load resources
 upper_body_layourt = pygame.image.load("./resources/assets/upper_body_layout.png").convert_alpha()
 
+# Set the window title
 pygame.display.set_caption("StretchFlow")
 
 # Initialize scaler and renderer
@@ -24,18 +33,18 @@ renderer = UIRenderer(screen, scaler)
 # Fonts
 title_font = pygame.font.Font(None, scaler.font(150))
 warning_font = pygame.font.Font(None, scaler.font(90))
-button_font = pygame.font.Font(None, scaler.font(50))
+button_font = pygame.font.Font(None, scaler.font(100))
 countdown_font = pygame.font.Font(None, scaler.font(200))
 
 # Text Surfaces
 title_surface = title_font.render("StretchFlow", True, colors["WHITE"])
-start_button_text = button_font.render("Start", True, colors["BLACK"])
-home_button_text = button_font.render("Home", True, colors["WHITE"])
+start_button_text = button_font.render("START", True, colors["GREEN"])
+home_button_text = button_font.render("HOME", True, colors["WHITE"])
 
 # UI Rects
-title_rect = pygame.Rect(scaler.x(1920 // 2 - 350), scaler.y(80), scaler.x(700), scaler.y(130))
-start_button_rect = pygame.Rect(scaler.x(1920 // 2 - 100), scaler.y(1440 // 2), scaler.x(200), scaler.y(60))
-home_button_rect = pygame.Rect(scaler.x(1920 // 2 - 100), scaler.y(1440 // 2 + 300), scaler.x(200), scaler.y(60))
+title_rect = pygame.Rect(scaler.x(SCREEN_WIDTH // 2 - 350), scaler.y(80), scaler.x(700), scaler.y(130))
+start_button_rect = pygame.Rect(scaler.x(SCREEN_WIDTH // 2 - 150), scaler.y(SCREEN_HEIGHT // 2), scaler.x(300), scaler.y(100))
+home_button_rect = pygame.Rect(scaler.x(SCREEN_WIDTH // 2 - 100), scaler.y(SCREEN_HEIGHT // 2 + 300), scaler.x(200), scaler.y(60))
 
 # MediaPipe setup
 mp_pose = mp.solutions.pose
@@ -162,13 +171,13 @@ while running:
             renderer.render_home_warning_message("Use your index finger to start!", colors["WHITE"], warning_font, colors["BLUE"])
 
         # Draw title and button
-        pygame.draw.rect(screen, colors["BLACK"], title_rect)
+        pygame.draw.rect(screen, colors["BLACK"], title_rect, border_radius=15)
         screen.blit(title_surface, (
             SCREEN_WIDTH // 2 - title_surface.get_width() // 2,
             scaler.y(100)
         ))
 
-        pygame.draw.rect(screen, colors["GREEN"], start_button_rect)
+        pygame.draw.rect(screen, colors["WHITE"], start_button_rect, border_radius=10)
         screen.blit(start_button_text, (
             start_button_rect.x + start_button_rect.width // 2 - start_button_text.get_width() // 2,
             start_button_rect.y + start_button_text.get_height() // 4,
