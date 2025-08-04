@@ -4,7 +4,7 @@ import mediapipe as mp
 import pygame
 
 from app.stretch_detector import PoseDetectors, StretchExercise
-from utils.config import SCREEN_WIDTH, SCREEN_HEIGHT, colors
+from utils.config import colors
 from utils.ui_scaler import UIScaler
 from utils.ui_renderer import UIRenderer
 
@@ -13,11 +13,11 @@ pygame.init()
 
 # Set up the display
 info = pygame.display.Info()
-screen_width = info.current_w
-screen_height = info.current_h
+WINDOW_WIDTH = info.current_w
+WINDOW_HEIGHT = info.current_h
 
-WINDOW_WIDTH = int(screen_width * 0.5)
-WINDOW_HEIGHT = int(screen_height * 0.666)
+WINDOW_WIDTH = int(WINDOW_WIDTH * 0.5)
+WINDOW_HEIGHT = int(WINDOW_HEIGHT * 0.666)
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 
 # Load resources
@@ -27,7 +27,7 @@ upper_body_layourt = pygame.image.load("./resources/assets/upper_body_layout.png
 pygame.display.set_caption("StretchFlow")
 
 # Initialize scaler and renderer
-scaler = UIScaler(SCREEN_WIDTH, SCREEN_HEIGHT)
+scaler = UIScaler(WINDOW_WIDTH, WINDOW_HEIGHT)
 renderer = UIRenderer(screen, scaler)
 
 # Fonts
@@ -42,9 +42,9 @@ start_button_text = button_font.render("START", True, colors["GREEN"])
 home_button_text = button_font.render("HOME", True, colors["WHITE"])
 
 # UI Rects
-title_rect = pygame.Rect(scaler.x(SCREEN_WIDTH // 2 - 350), scaler.y(80), scaler.x(700), scaler.y(130))
-start_button_rect = pygame.Rect(scaler.x(SCREEN_WIDTH // 2 - 150), scaler.y(SCREEN_HEIGHT // 2), scaler.x(300), scaler.y(100))
-home_button_rect = pygame.Rect(scaler.x(SCREEN_WIDTH // 2 - 150), scaler.y(SCREEN_HEIGHT // 2 + 300), scaler.x(300), scaler.y(100))
+title_rect = pygame.Rect(scaler.x(WINDOW_WIDTH // 2 - 350), scaler.y(80), scaler.x(700), scaler.y(130))
+start_button_rect = pygame.Rect(scaler.x(WINDOW_WIDTH // 2 - 150), scaler.y(WINDOW_HEIGHT // 2), scaler.x(300), scaler.y(100))
+home_button_rect = pygame.Rect(scaler.x(WINDOW_WIDTH // 2 - 150), scaler.y(WINDOW_HEIGHT // 2 + 300), scaler.x(300), scaler.y(100))
 
 # MediaPipe setup
 mp_pose = mp.solutions.pose
@@ -111,7 +111,7 @@ while running:
     if not ret:
         break
 
-    frame = cv2.resize(frame, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    frame = cv2.resize(frame, (WINDOW_WIDTH, WINDOW_HEIGHT))
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     pygame_frame = pygame.surfarray.make_surface(frame)
@@ -141,7 +141,7 @@ while running:
                 if hand_results.multi_hand_landmarks:
                     for hand_landmarks in hand_results.multi_hand_landmarks:
                         index_finger_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-                        x, y = int(index_finger_tip.x * SCREEN_WIDTH), int(index_finger_tip.y * SCREEN_HEIGHT)
+                        x, y = int(index_finger_tip.x * WINDOW_WIDTH), int(index_finger_tip.y * WINDOW_HEIGHT)
                         if home_button_rect.collidepoint(x, y):
                             stretch_detection_started = False
                             stretch_screen_active = False
@@ -182,7 +182,7 @@ while running:
         if hand_results.multi_hand_landmarks:
             for hand_landmarks in hand_results.multi_hand_landmarks:
                 index_finger_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-                x, y = int(index_finger_tip.x * SCREEN_WIDTH), int(index_finger_tip.y * SCREEN_HEIGHT)
+                x, y = int(index_finger_tip.x * WINDOW_WIDTH), int(index_finger_tip.y * WINDOW_HEIGHT)
                 if start_button_rect.collidepoint(x, y):
                     stretch_detection_started = True
         else:
@@ -191,7 +191,7 @@ while running:
         # Draw title and button
         pygame.draw.rect(screen, colors["BLACK"], title_rect, border_radius=15)
         screen.blit(title_surface, (
-            SCREEN_WIDTH // 2 - title_surface.get_width() // 2,
+            WINDOW_WIDTH // 2 - title_surface.get_width() // 2,
             scaler.y(100)
         ))
 

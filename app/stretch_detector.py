@@ -1,7 +1,6 @@
 from math import hypot
+
 import pygame
-from utils.config import SCREEN_WIDTH, SCREEN_HEIGHT
-from utils.ui_scaler import UIScaler
 
 class StretchExercise:
     def __init__(self, name, detect_func, prompt_msg, success_msg):
