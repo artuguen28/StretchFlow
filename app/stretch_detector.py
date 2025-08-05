@@ -2,6 +2,7 @@ from math import hypot
 
 import pygame
 
+
 class StretchExercise:
     def __init__(self, name, detect_func, prompt_msg, success_msg):
         self.name = name
@@ -130,7 +131,10 @@ class PoseDetectors:
         lm = landmarks.landmark
         nose = lm[mp_pose.PoseLandmark.NOSE]
         left_shoulder = lm[mp_pose.PoseLandmark.LEFT_SHOULDER]
-        return abs(nose.x - left_shoulder.x) < 0.08
+        left_wrist = lm[mp_pose.PoseLandmark.LEFT_WRIST]
+        wrist_nose_distance = hypot(left_wrist.x - nose.x, left_wrist.y - nose.y)
+
+        return abs(nose.x - left_shoulder.x) < 0.08 and wrist_nose_distance < 0.15
 
     @staticmethod
     def detect_neck_tilt_right(landmarks, mp_pose):
@@ -139,4 +143,7 @@ class PoseDetectors:
         lm = landmarks.landmark
         nose = lm[mp_pose.PoseLandmark.NOSE]
         right_shoulder = lm[mp_pose.PoseLandmark.RIGHT_SHOULDER]
-        return abs(nose.x - right_shoulder.x) < 0.08
+        right_wrist = lm[mp_pose.PoseLandmark.RIGHT_WRIST]
+        wrist_nose_distance = hypot(right_wrist.x - nose.x, right_wrist.y - nose.y)
+
+        return abs(nose.x - right_shoulder.x) < 0.08 and wrist_nose_distance < 0.15

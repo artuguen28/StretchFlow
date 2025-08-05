@@ -39,10 +39,10 @@ def setup_mediapipe():
 
 def create_exercise_list():
     return [
-        StretchExercise("Left Bend Stretch", PoseDetectors.detect_bend_to_left, "Lean your upper body to the left side.", "Nice stretch to the left!"),
-        StretchExercise("Right Bend Stretch", PoseDetectors.detect_bend_to_right, "Lean your upper body to the right side.", "Well done on that right bend!"),
-        StretchExercise("Left Cross-Body Arm Stretch", PoseDetectors.detect_left_shoulder_extension, "Bring your left arm across your chest and hold it with your right hand.", "Great stretch!"),
-        StretchExercise("Right Cross-Body Arm Stretch", PoseDetectors.detect_right_shoulder_extension, "Bring your right arm across your chest and hold it with your left hand.", "Awesome work!"),
+        # StretchExercise("Left Bend Stretch", PoseDetectors.detect_bend_to_left, "Lean your upper body to the left side.", "Nice stretch to the left!"),
+        # StretchExercise("Right Bend Stretch", PoseDetectors.detect_bend_to_right, "Lean your upper body to the right side.", "Well done on that right bend!"),
+        # StretchExercise("Left Cross-Body Arm Stretch", PoseDetectors.detect_left_shoulder_extension, "Bring your left arm across your chest and hold it with your right hand.", "Great stretch!"),
+        # StretchExercise("Right Cross-Body Arm Stretch", PoseDetectors.detect_right_shoulder_extension, "Bring your right arm across your chest and hold it with your left hand.", "Awesome work!"),
         StretchExercise("Left Neck Tilt Stretch", PoseDetectors.detect_neck_tilt_left, "Gently tilt your head toward your left shoulder and hold it with your left hand.", "Good job relaxing that neck!"),
         StretchExercise("Right Neck Tilt Stretch", PoseDetectors.detect_neck_tilt_right, "Gently tilt your head toward your right shoulder and hold it with your right hand.", "Neck stretch complete!")
     ]
