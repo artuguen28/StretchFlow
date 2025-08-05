@@ -39,15 +39,15 @@ def setup_mediapipe():
 
 def create_exercise_list():
     return [
-        # StretchExercise("Left Bend Stretch", PoseDetectors.detect_bend_to_left, "Lean your upper body to the left side.", "Nice stretch to the left!"),
-        # StretchExercise("Right Bend Stretch", PoseDetectors.detect_bend_to_right, "Lean your upper body to the right side.", "Well done on that right bend!"),
-        # StretchExercise("Left Cross-Body Arm Stretch", PoseDetectors.detect_left_shoulder_extension, "Bring your left arm across your chest and hold it with your right hand.", "Great stretch!"),
-        # StretchExercise("Right Cross-Body Arm Stretch", PoseDetectors.detect_right_shoulder_extension, "Bring your right arm across your chest and hold it with your left hand.", "Awesome work!"),
+        StretchExercise("Left Bend Stretch", PoseDetectors.detect_bend_to_left, "Lean your upper body to the left side.", "Nice stretch to the left!"),
+        StretchExercise("Right Bend Stretch", PoseDetectors.detect_bend_to_right, "Lean your upper body to the right side.", "Well done on that right bend!"),
+        StretchExercise("Left Cross-Body Arm Stretch", PoseDetectors.detect_left_shoulder_extension, "Bring your left arm across your chest and hold it with your right hand.", "Great stretch!"),
+        StretchExercise("Right Cross-Body Arm Stretch", PoseDetectors.detect_right_shoulder_extension, "Bring your right arm across your chest and hold it with your left hand.", "Awesome work!"),
         StretchExercise("Left Neck Tilt Stretch", PoseDetectors.detect_neck_tilt_left, "Gently tilt your head toward your left shoulder and hold it with your left hand.", "Good job relaxing that neck!"),
         StretchExercise("Right Neck Tilt Stretch", PoseDetectors.detect_neck_tilt_right, "Gently tilt your head toward your right shoulder and hold it with your right hand.", "Neck stretch complete!")
     ]
 
-def run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_body_layout, exercises):
+def run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_body_layout, exercises, timer):
 
     scaler = UIScaler(width, height)
     renderer = UIRenderer(screen, scaler)
@@ -105,7 +105,8 @@ def run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_b
                         renderer,
                         warning_font,
                         countdown_font,
-                        colors
+                        colors,
+                        timer
                     )
                     if finished:
                         current_exercise_index += 1
@@ -184,6 +185,10 @@ def run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_b
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description="StretchFlow Exercise App")
+    parser.add_argument("--timer", type=int, default=9, help="Time in seconds for each exercise")
+    args = parser.parse_args()
+
     screen, width, height = init_pygame_window()
     scaler = UIScaler(width, height)
     renderer = UIRenderer(screen, scaler)
@@ -193,4 +198,5 @@ if __name__ == "__main__":
     mp_pose, pose, mp_hands, hands = setup_mediapipe()
     exercises = create_exercise_list()
 
-    run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_body_layout, exercises)
+    run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_body_layout, exercises, args.timer)
+

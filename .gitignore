@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+Dockerfile
+run_dev.sh
+pose_traking_full_body_landmarks.png
+
+resources/audio
+

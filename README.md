@@ -20,52 +20,12 @@ Navigate to the project directory (where the `requirements.txt` is located) and 
 pip install -r requirements.txt
 ```
 
-#### 3. Run the app
-
+#### 3. Run the App (with optional timer)
 ```bash
-python app/main.py
+python main.py --timer 10
 ```
+🕒 Use the --timer flag to define the number of seconds each stretch should be held. Default is 9 seconds if not provided.
 
-### Option 2: Run with Docker
-
-#### 1. Build the Docker Image
-
-Navigate to the project directory (where the `Dockerfile` is located) and build the Docker image:
-
-```bash
-docker build -t stretchflow .
-```
-
-#### 2. Run the Docker Container
-
-Run the container, ensuring it has access to your local display for `cv2.imshow`:
-
-```bash
-docker run -it --rm \
-    --device=/dev/video0 \
-    -e DISPLAY=$DISPLAY \
-    -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -v "$(pwd)":/app \
-    stretchflow
-```
-
-#### Notes:
-- The `-e DISPLAY=$DISPLAY` and `-v /tmp/.X11-unix:/tmp/.X11-unix` options allow the container to access your local display for GUI applications like `cv2.imshow`.
-- If you encounter issues with permissions, you may need to allow access to your X server:
-  ```bash
-  xhost +local:docker
-  ```
-  After running the container, you can revoke access with:
-  ```bash
-  xhost -local:docker
-  ```
-
-#### 3. Stop the Container
-
-To stop the container, press `Ctrl+C` in the terminal where the container is running.
-
-
-This addition provides clear instructions for running the application using Docker while ensuring compatibility with GUI-based features like `cv2.imshow`.This addition provides clear instructions for running the application using Docker while ensuring compatibility with GUI-based features like `cv2.imshow`.
 
 ## How to use StretchFlow
 
