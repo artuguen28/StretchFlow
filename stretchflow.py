@@ -11,6 +11,165 @@ from utils.ui_scaler import UIScaler
 from utils.ui_renderer import UIRenderer
 
 
+class StretchFlowApp:
+    def __init__(self, timer):
+        self.timer = timer
+        self.screen, self.width, self.height = init_pygame_window()
+        self.scaler = UIScaler(self.width, self.height)
+        self.renderer = UIRenderer(self.screen, self.scaler)
+        self.upper_body_layout = load_assets()
+        self.fonts = create_fonts(self.scaler)
+        self.mp_pose, self.pose, self.mp_hands, self.hands = setup_mediapipe()
+        self.exercises = create_exercise_list()
+        self.timer = timer
+
+        self.scaler = UIScaler(self.width, self.height)
+        self.renderer = UIRenderer(self.screen, self.scaler)
+
+        self.title_font = pygame.font.Font(None, self.scaler.font(150))
+        self.warning_font = pygame.font.Font(None, self.scaler.font(70))
+        self.button_font = pygame.font.Font(None, self.scaler.font(100))
+        self.countdown_font = pygame.font.Font(None, self.scaler.font(200))
+
+        self.title_surface = self.title_font.render("StretchFlow", True, colors["WHITE"])
+        self.start_button_text = self.button_font.render("START", True, colors["GREEN"])
+        self.home_button_text = self.button_font.render("HOME", True, colors["WHITE"])
+
+        self.title_rect = pygame.Rect(self.scaler.x(self.width // 2 - 350), self.scaler.y(80), self.scaler.x(700), self.scaler.y(130))
+        self.start_button_rect = pygame.Rect(self.scaler.x(self.width // 2 - 150), self.scaler.y(self.height // 2), self.scaler.x(300), self.scaler.y(100))
+        self.home_button_rect = pygame.Rect(self.scaler.x(self.width // 2 - 150), self.scaler.y(self.height // 2 + 300), self.scaler.x(300), self.scaler.y(100))
+
+        self.stretch_detection_started = False
+        self.stretch_screen_active = False
+        self.countdown_start_time = None
+        self.current_exercise_index = 0
+        self.running = True
+        self.cap = cv2.VideoCapture(0)
+
+    def run(self):
+        while self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+
+            ret, frame = self.cap.read()
+            if not ret:
+                break
+
+            frame = cv2.resize(frame, (self.width, self.height))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            pygame_frame = pygame.surfarray.make_surface(frame)
+            pygame_frame = pygame.transform.rotate(pygame_frame, -90)
+            self.screen.blit(pygame_frame, (0, 0))
+
+            results = self.pose.process(frame)
+
+            if self.stretch_detection_started:
+                if self.stretch_screen_active:
+                    self.handle_exercise_screen(results, frame)
+                else:
+                    self.handle_pose_alignment_screen(results)
+            else:
+                self.handle_home_screen(frame)
+
+            pygame.display.flip()
+
+        self.cap.release()
+        pygame.quit()
+
+    def handle_exercise_screen(self, results, frame):
+        if results.pose_landmarks and self.current_exercise_index < len(self.exercises):
+            current_exercise = self.exercises[self.current_exercise_index]
+            finished = current_exercise.update(
+                results.pose_landmarks,
+                self.mp_pose,
+                self.renderer,
+                self.warning_font,
+                self.countdown_font,
+                colors,
+                self.timer
+            )
+            if finished:
+                self.current_exercise_index += 1
+        elif self.current_exercise_index >= len(self.exercises):
+            if not self.countdown_start_time:
+                self.countdown_start_time = pygame.time.get_ticks()
+
+            elapsed_time = pygame.time.get_ticks() - self.countdown_start_time
+
+            if elapsed_time < 2000:
+                self.renderer.render_warning_message("Session Complete!", colors["BLACK"], self.warning_font, colors["GREEN"])
+            else:
+                self.renderer.render_warning_message("Use your index finger to go home!", colors["WHITE"], self.warning_font, colors["BLUE"])
+
+            hand_results = self.hands.process(frame)
+            if hand_results.multi_hand_landmarks:
+                for hand_landmarks in hand_results.multi_hand_landmarks:
+                    index_finger_tip = hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP]
+                    x, y = int(index_finger_tip.x * self.width), int(index_finger_tip.y * self.height)
+                    if self.home_button_rect.collidepoint(x, y):
+                        self.reset_state()
+
+            pygame.draw.rect(self.screen, colors["BLUE"], self.home_button_rect, border_radius=15)
+            self.screen.blit(self.home_button_text, (
+                self.home_button_rect.x + self.home_button_rect.width // 2 - self.home_button_text.get_width() // 2,
+                self.home_button_rect.y + self.home_button_text.get_height() // 4,
+            ))
+
+    def handle_pose_alignment_screen(self, results):
+        if results.pose_landmarks:
+            upper_body_detected = PoseDetectors.detect_upper_body(results.pose_landmarks, self.mp_pose)
+
+            if upper_body_detected:
+                if not self.countdown_start_time:
+                    self.countdown_start_time = pygame.time.get_ticks()
+
+                elapsed_time = pygame.time.get_ticks() - self.countdown_start_time
+
+                if elapsed_time < 2000:
+                    self.renderer.render_warning_message("Good Job! Let's start your stretch session!", colors["BLACK"], self.warning_font, colors["GREEN"])
+                else:
+                    countdown_value = 3 - (elapsed_time - 2000) // 1000
+                    if countdown_value > 0:
+                        self.renderer.render_centered_text(str(countdown_value), colors["WHITE"], self.countdown_font)
+                    else:
+                        self.countdown_start_time = None
+                        self.stretch_screen_active = True
+            else:
+                self.renderer.render_warning_message("Step back or forward and try to match your posture with the pose shown!", colors["WHITE"], self.warning_font, colors["BLUE"])
+                self.renderer.render_image(self.upper_body_layout, position="center", scale=1)
+
+    def handle_home_screen(self, frame):
+        hand_results = self.hands.process(frame)
+        if hand_results.multi_hand_landmarks:
+            for hand_landmarks in hand_results.multi_hand_landmarks:
+                index_finger_tip = hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP]
+                x, y = int(index_finger_tip.x * self.width), int(index_finger_tip.y * self.height)
+                if self.start_button_rect.collidepoint(x, y):
+                    self.stretch_detection_started = True
+        else:
+            self.renderer.render_home_warning_message("Use your index finger to touch the button!", colors["WHITE"], self.warning_font, colors["BLUE"])
+
+        pygame.draw.rect(self.screen, colors["BLACK"], self.title_rect, border_radius=15)
+        self.screen.blit(self.title_surface, (
+            self.width // 2 - self.title_surface.get_width() // 2,
+            self.scaler.y(100)
+        ))
+
+        pygame.draw.rect(self.screen, colors["WHITE"], self.start_button_rect, border_radius=10)
+        self.screen.blit(self.start_button_text, (
+            self.start_button_rect.x + self.start_button_rect.width // 2 - self.start_button_text.get_width() // 2,
+            self.start_button_rect.y + self.start_button_text.get_height() // 4,
+        ))
+
+    def reset_state(self):
+        self.stretch_detection_started = False
+        self.stretch_screen_active = False
+        self.current_exercise_index = 0
+        self.countdown_start_time = None
+
+
 def init_pygame_window(width_ratio=0.5, height_ratio=0.666):
     pygame.init()
     info = pygame.display.Info()
@@ -47,148 +206,6 @@ def create_exercise_list():
         StretchExercise("Right Neck Tilt Stretch", PoseDetectors.detect_neck_tilt_right, "Gently tilt your head toward your right shoulder and hold it with your right hand.", "Neck stretch complete!")
     ]
 
-def run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_body_layout, exercises, timer):
-
-    scaler = UIScaler(width, height)
-    renderer = UIRenderer(screen, scaler)
-
-    # Fonts
-    title_font = pygame.font.Font(None, scaler.font(150))
-    warning_font = pygame.font.Font(None, scaler.font(70))
-    button_font = pygame.font.Font(None, scaler.font(100))
-    countdown_font = pygame.font.Font(None, scaler.font(200))
-
-    # Pre-rendered text surfaces
-    title_surface = title_font.render("StretchFlow", True, colors["WHITE"])
-    start_button_text = button_font.render("START", True, colors["GREEN"])
-    home_button_text = button_font.render("HOME", True, colors["WHITE"])
-
-    # UI Rects
-    title_rect = pygame.Rect(scaler.x(width // 2 - 350), scaler.y(80), scaler.x(700), scaler.y(130))
-    start_button_rect = pygame.Rect(scaler.x(width // 2 - 150), scaler.y(height // 2), scaler.x(300), scaler.y(100))
-    home_button_rect = pygame.Rect(scaler.x(width // 2 - 150), scaler.y(height // 2 + 300), scaler.x(300), scaler.y(100))
-
-    # State variables
-    stretch_detection_started = False
-    stretch_screen_active = False
-    countdown_start_time = None
-    current_exercise_index = 0
-    running = True
-
-    cap = cv2.VideoCapture(0)
-
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        frame = cv2.resize(frame, (width, height))
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        pygame_frame = pygame.surfarray.make_surface(frame)
-        pygame_frame = pygame.transform.rotate(pygame_frame, -90)
-        screen.blit(pygame_frame, (0, 0))
-
-        results = pose.process(frame)
-
-        if stretch_detection_started:
-            if stretch_screen_active:
-                if results.pose_landmarks and current_exercise_index < len(exercises):
-                    current_exercise = exercises[current_exercise_index]
-                    finished = current_exercise.update(
-                        results.pose_landmarks,
-                        mp_pose,
-                        renderer,
-                        warning_font,
-                        countdown_font,
-                        colors,
-                        timer
-                    )
-                    if finished:
-                        current_exercise_index += 1
-                elif current_exercise_index >= len(exercises):
-
-                    if not countdown_start_time:
-                        countdown_start_time = pygame.time.get_ticks()
-
-                    elapsed_time = pygame.time.get_ticks() - countdown_start_time
-
-                    if elapsed_time < 2000:
-                        renderer.render_warning_message("Session Complete!", colors["BLACK"], warning_font, colors["GREEN"])
-                    else:
-                        renderer.render_warning_message("Use your index finger to go home!", colors["WHITE"], warning_font, colors["BLUE"])
-
-                    hand_results = hands.process(frame)
-                    if hand_results.multi_hand_landmarks:
-                        for hand_landmarks in hand_results.multi_hand_landmarks:
-                            index_finger_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-                            x, y = int(index_finger_tip.x * width), int(index_finger_tip.y * height)
-                            if home_button_rect.collidepoint(x, y):
-                                stretch_detection_started = False
-                                stretch_screen_active = False
-                                current_exercise_index = 0
-                                countdown_start_time = None
-
-                    pygame.draw.rect(screen, colors["BLUE"], home_button_rect, border_radius=15)
-                    screen.blit(home_button_text, (
-                        home_button_rect.x + home_button_rect.width // 2 - home_button_text.get_width() // 2,
-                        home_button_rect.y + home_button_text.get_height() // 4,
-                    ))
-            else:
-                if results.pose_landmarks:
-                    upper_body_detected = PoseDetectors.detect_upper_body(results.pose_landmarks, mp_pose)
-
-                    if upper_body_detected:
-                        if not countdown_start_time:
-                            countdown_start_time = pygame.time.get_ticks()
-
-                        elapsed_time = pygame.time.get_ticks() - countdown_start_time
-
-                        if elapsed_time < 2000:
-                            renderer.render_warning_message("Good Job! Let's start your stretch session!", colors["BLACK"], warning_font, colors["GREEN"])
-                        else:
-                            countdown_value = 3 - (elapsed_time - 2000) // 1000
-                            if countdown_value > 0:
-                                renderer.render_centered_text(str(countdown_value), colors["WHITE"], countdown_font)
-                            else:
-                                countdown_start_time = None
-                                stretch_screen_active = True
-                    else:
-                        renderer.render_warning_message("Step back or forward and try to match your posture with the pose shown!", colors["WHITE"], warning_font, colors["BLUE"])
-                        renderer.render_image(upper_body_layout, position="center", scale=1)
-        else:
-            hand_results = hands.process(frame)
-            if hand_results.multi_hand_landmarks:
-                for hand_landmarks in hand_results.multi_hand_landmarks:
-                    index_finger_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-                    x, y = int(index_finger_tip.x * width), int(index_finger_tip.y * height)
-                    if start_button_rect.collidepoint(x, y):
-                        stretch_detection_started = True
-            else:
-                renderer.render_home_warning_message("Use your index finger to touch the button!", colors["WHITE"], warning_font, colors["BLUE"])
-
-            # Draw title and button
-            pygame.draw.rect(screen, colors["BLACK"], title_rect, border_radius=15)
-            screen.blit(title_surface, (
-                width // 2 - title_surface.get_width() // 2,
-                scaler.y(100)
-            ))
-
-            pygame.draw.rect(screen, colors["WHITE"], start_button_rect, border_radius=10)
-            screen.blit(start_button_text, (
-                start_button_rect.x + start_button_rect.width // 2 - start_button_text.get_width() // 2,
-                start_button_rect.y + start_button_text.get_height() // 4,
-            ))
-
-        pygame.display.flip()
-
-    cap.release()
-    pygame.quit()
-
 
 if __name__ == "__main__":
 
@@ -196,14 +213,6 @@ if __name__ == "__main__":
     parser.add_argument("--timer", type=int, default=9, help="Time in seconds for each exercise")
     args = parser.parse_args()
 
-    screen, width, height = init_pygame_window()
-    scaler = UIScaler(width, height)
-    renderer = UIRenderer(screen, scaler)
-
-    upper_body_layout = load_assets()
-    fonts = create_fonts(scaler)
-    mp_pose, pose, mp_hands, hands = setup_mediapipe()
-    exercises = create_exercise_list()
-
-    run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_body_layout, exercises, args.timer)
+    app = StretchFlowApp(timer=args.timer)
+    app.run()
 
