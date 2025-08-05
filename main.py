@@ -39,8 +39,8 @@ def setup_mediapipe():
 
 def create_exercise_list():
     return [
-        StretchExercise("Left Bend Stretch", PoseDetectors.detect_bend_to_left, "Lean your upper body to the left side.", "Nice stretch to the left!"),
-        StretchExercise("Right Bend Stretch", PoseDetectors.detect_bend_to_right, "Lean your upper body to the right side.", "Well done on that right bend!"),
+        StretchExercise("Left Bend Stretch", PoseDetectors.detect_bend_to_left, "Put your left arm over your head and lean your body to the left side.", "Nice stretch to the left!"),
+        StretchExercise("Right Bend Stretch", PoseDetectors.detect_bend_to_right, "Put your right arm over your head and lean your body to the right side.", "Well done on that right bend!"),
         StretchExercise("Left Cross-Body Arm Stretch", PoseDetectors.detect_left_shoulder_extension, "Bring your left arm across your chest and hold it with your right hand.", "Great stretch!"),
         StretchExercise("Right Cross-Body Arm Stretch", PoseDetectors.detect_right_shoulder_extension, "Bring your right arm across your chest and hold it with your left hand.", "Awesome work!"),
         StretchExercise("Left Neck Tilt Stretch", PoseDetectors.detect_neck_tilt_left, "Gently tilt your head toward your left shoulder and hold it with your left hand.", "Good job relaxing that neck!"),
@@ -72,7 +72,7 @@ def run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_b
     stretch_detection_started = True
     stretch_screen_active = True
     countdown_start_time = None
-    current_exercise_index = 0
+    current_exercise_index = 7
     running = True
 
     cap = cv2.VideoCapture(0)
@@ -111,7 +111,16 @@ def run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_b
                     if finished:
                         current_exercise_index += 1
                 elif current_exercise_index >= len(exercises):
-                    renderer.render_warning_message("Session Complete!", colors["BLACK"], warning_font, colors["GREEN"])
+
+                    if not countdown_start_time:
+                        countdown_start_time = pygame.time.get_ticks()
+
+                    elapsed_time = pygame.time.get_ticks() - countdown_start_time
+
+                    if elapsed_time < 2000:
+                        renderer.render_warning_message("Session Complete!", colors["BLACK"], warning_font, colors["GREEN"])
+                    else:
+                        renderer.render_warning_message("Use your index finger to go home!", colors["WHITE"], warning_font, colors["BLUE"])
 
                     hand_results = hands.process(frame)
                     if hand_results.multi_hand_landmarks:
@@ -123,8 +132,6 @@ def run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_b
                                 stretch_screen_active = False
                                 current_exercise_index = 0
                                 countdown_start_time = None
-                    else:
-                        renderer.render_warning_message("Use your index finger to go home!", colors["WHITE"], warning_font, colors["BLUE"])
 
                     pygame.draw.rect(screen, colors["BLUE"], home_button_rect, border_radius=15)
                     screen.blit(home_button_text, (
@@ -151,7 +158,7 @@ def run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_b
                                 countdown_start_time = None
                                 stretch_screen_active = True
                     else:
-                        renderer.render_warning_message("Align your upper body like the image!", colors["WHITE"], warning_font, colors["BLUE"])
+                        renderer.render_warning_message("Step back or forward and try to match your posture with the pose shown!", colors["WHITE"], warning_font, colors["BLUE"])
                         renderer.render_image(upper_body_layout, position="center", scale=1)
         else:
             hand_results = hands.process(frame)
