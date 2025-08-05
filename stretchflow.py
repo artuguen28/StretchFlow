@@ -69,10 +69,10 @@ def run_game_loop(screen, width, height, pose, hands, mp_pose, mp_hands, upper_b
     home_button_rect = pygame.Rect(scaler.x(width // 2 - 150), scaler.y(height // 2 + 300), scaler.x(300), scaler.y(100))
 
     # State variables
-    stretch_detection_started = True
-    stretch_screen_active = True
+    stretch_detection_started = False
+    stretch_screen_active = False
     countdown_start_time = None
-    current_exercise_index = 7
+    current_exercise_index = 0
     running = True
 
     cap = cv2.VideoCapture(0)
