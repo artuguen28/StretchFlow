@@ -87,10 +87,3 @@ To return to the home screen, raise your index finger and point it at the Home b
 
 ## 🎉 Enjoy your stretch session and keep your body moving! Your well-being starts with small steps. 💪
 
-
-
-
-
-
-
-
