@@ -1,5 +1,5 @@
-# StrechFlow
-StretchFlow is a real-time pose analysis system that detects and tracks stretching movements using MediaPipe and OpenCV. Designed for fitness, wellness, and ergonomic use cases, StretchFlow provides immediate visual feedback to help users perform stretches correctly and safely.
+# StrechVision
+StretchVision is a real-time pose analysis system that detects and tracks stretching movements using MediaPipe and OpenCV. Designed for fitness, wellness, and ergonomic use cases, StretchVision provides immediate visual feedback to help users perform stretches correctly and safely.
 
 ## Instalation
 
@@ -8,8 +8,8 @@ StretchFlow is a real-time pose analysis system that detects and tracks stretchi
 #### 1. Create and Activate Conda
 
 ```bash
-conda create -n stretchflow python=3.11 -y
-conda activate stretchflow
+conda create -n stretchvision python=3.11 -y
+conda activate stretchvision
 ```
 
 Navigate to the project directory (where the `requirements.txt` is located) and install the dependencies:
@@ -22,25 +22,27 @@ pip install -r requirements.txt
 
 #### 3. Run the App (with optional timer)
 ```bash
-python main.py --timer 10
+python stretchvision.py --timer 10
 ```
 🕒 Use the --timer flag to define the number of seconds each stretch should be held. Default is 9 seconds if not provided.
 
 
-## How to use StretchFlow
+## How to use StretchVision
 
-StretchFlow is an interactive stretch assistant that uses your webcam to guide and monitor your posture during a short set of upper-body stretching exercises. Follow the steps below to get started.
+StretchVision is an interactive stretch assistant that uses your webcam to guide and monitor your posture during a short set of upper-body stretching exercises. Follow the steps below to get started.
+
+<!-- ![Start Screen](media/start_screen.png) -->
 
 ### ✅ Getting Started
 
 1. Ensure your webcam is connected and facing you.
-2. Launch the application — a window will appear with the title "StretchFlow".
+2. Launch the application — a window will appear with the title "StretchVision".
 3. On the home screen, raise your index finger and point it at the green Start button to begin the session.
 4. Align your upper body with the reference image shown on the screen.
 5. Once you're correctly positioned, the app will count down and begin the exercise sequence.
 
 ### 💪 Exercise Sequence
-StretchFlow will guide you through the following exercises:
+StretchVision will guide you through the following exercises:
 
 **Left Bend Stretch**  
 Instruction: Lean your upper body to the left side.  
@@ -72,6 +74,10 @@ Instruction: Gently tilt your head to the right, toward your right shoulder.
 Goal: Stretch the left side of your neck.  
 Cue: "Gently tilt your head toward your right shoulder."  
 
+### Exercise Screen
+
+<!-- ![Exercise Screen](media/exercise_screen.png) -->
+
 ### 🏁 Completing the Session
 Once all exercises are completed, you'll see a "Session Complete!" message.
 
@@ -83,6 +89,13 @@ To return to the home screen, raise your index finger and point it at the Home b
 - Perform movements slowly and with control.
 - If the app doesn’t detect your pose, adjust your position or lighting.
 
+
+
+## 🧠 How MediaPipe Tracks Your Movements
+
+<!-- ![MediaPipe Landmark Demo](media/landmarks_demo.gif) -->
+
+> The animated image above illustrates how StretchVision leverages MediaPipe’s pose estimation to detect and track key body landmarks in real time, enabling accurate posture recognition and feedback throughout each stretching exercise.
 
 
 ## 🎉 Enjoy your stretch session and keep your body moving! Your well-being starts with small steps. 💪

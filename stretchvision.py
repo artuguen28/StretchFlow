@@ -11,7 +11,7 @@ from utils.ui_scaler import UIScaler
 from utils.ui_renderer import UIRenderer
 
 
-class StretchFlowApp:
+class StretchVisionApp:
     def __init__(self, timer):
         self.timer = timer
         self.screen, self.width, self.height = init_pygame_window()
@@ -31,7 +31,7 @@ class StretchFlowApp:
         self.button_font = pygame.font.Font(None, self.scaler.font(100))
         self.countdown_font = pygame.font.Font(None, self.scaler.font(200))
 
-        self.title_surface = self.title_font.render("StretchFlow", True, colors["WHITE"])
+        self.title_surface = self.title_font.render("StretchVision", True, colors["WHITE"])
         self.start_button_text = self.button_font.render("START", True, colors["GREEN"])
         self.home_button_text = self.button_font.render("HOME", True, colors["WHITE"])
 
@@ -137,7 +137,7 @@ class StretchFlowApp:
                         self.countdown_start_time = None
                         self.stretch_screen_active = True
             else:
-                self.renderer.render_warning_message("Step back or forward and try to match your posture with the pose shown!", colors["WHITE"], self.warning_font, colors["BLUE"])
+                self.renderer.render_warning_message("Adjust your distance and line up your posture with the reference pose", colors["WHITE"], self.warning_font, colors["BLUE"])
                 self.renderer.render_image(self.upper_body_layout, position="center", scale=1)
 
     def handle_home_screen(self, frame):
@@ -176,7 +176,7 @@ def init_pygame_window(width_ratio=0.5, height_ratio=0.666):
     width = int(info.current_w * width_ratio)
     height = int(info.current_h * height_ratio)
     screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption("StretchFlow")
+    pygame.display.set_caption("StretchVision")
     return screen, width, height
 
 def load_assets():
@@ -209,10 +209,10 @@ def create_exercise_list():
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="StretchFlow Exercise App")
+    parser = argparse.ArgumentParser(description="StretchVision Exercise App")
     parser.add_argument("--timer", type=int, default=9, help="Time in seconds for each exercise")
     args = parser.parse_args()
 
-    app = StretchFlowApp(timer=args.timer)
+    app = StretchVisionApp(timer=args.timer)
     app.run()
 
