@@ -1,16 +1,16 @@
 # StrechVision - Real-time micro-stretch guidance with computer vision
 StretchVision is a real-time pose analysis system that detects and tracks stretching movements using MediaPipe and OpenCV. Designed for fitness, wellness, and ergonomic use cases, StretchVision provides immediate visual feedback to help users perform stretches correctly and safely.
 
-## Features
--🧍‍♂ **Live Pose Detection** via MediaPipe landmarks
--🖐️ **Gesture Control** — no mouse or keyboard needed
--💪 **Guided Stretch Routines** with posture cues
--⏱️ **Custom Timers** using --timer flag
--🧠 **Visual Feedback** for proper alignment
--🖼️ **Reference Images** to guide your form
--📷 **Live Camera View** for self-correction
--🧩 **Modular Design** with SOLID architecture
--💡 **Offline-First** — runs locally, no internet required
+## Features  
+-🧍‍♂ **Live Pose Detection** via MediaPipe landmarks  
+-🖐️ **Gesture Control** — no mouse or keyboard needed  
+-💪 **Guided Stretch Routines** with posture cues  
+-⏱️ **Custom Timers** using --timer flag  
+-🧠 **Visual Feedback** for proper alignment  
+-🖼️ **Reference Images** to guide your form  
+-📷 **Live Camera View** for self-correction  
+-🧩 **Modular Design** with SOLID architecture  
+-💡 **Offline-First** — runs locally, no internet required  
 
 ## Tech Stack
 - **Language**: Python 3.11  
